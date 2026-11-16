@@ -43,6 +43,18 @@ pipeline {
                                  fingerprint: true
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                bat 'docker build -t cicd-springboot-app:latest .'
+            }
+        }
+
+        stage('Docker Deploy') {
+            steps {
+                bat 'docker run -d -p 8081:8080 --name cicd-app cicd-springboot-app:latest'
+            }
+        }
     }
 
     post {
