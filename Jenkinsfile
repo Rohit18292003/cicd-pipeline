@@ -54,19 +54,16 @@ pipeline {
 stage('Docker Deploy') {
     steps {
         script {
-            echo 'Removing previous application container...'
-
-            // Remove old container if it exists
             bat(
                 returnStatus: true,
                 script: 'docker rm -f cicd-app'
             )
 
-            echo 'Deploying latest application...'
-
-            // Start new container
             bat '''
-                docker run -d --restart unless-stopped -p 8081:8080 --name cicd-app cicd-springboot-app:latest
+                docker run -d --restart unless-stopped ^
+                -p 8081:8080 ^
+                --name cicd-app ^
+                rohitbirajdardocker/cicd-springboot-app:latest
             '''
         }
     }
