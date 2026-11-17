@@ -44,11 +44,39 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                bat 'docker build -t cicd-springboot-app:latest .'
+
+
+stage('Docker Build') {
+    steps {
+        bat '''
+            docker build ^
+            -t rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER% ^
+            -t rohitbirajdardocker/cicd-springboot-app:latest .
+        '''
+    }
+}
+
+stage('Docker Push') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_TOKEN'
+            )
+        ]) {
+            bat 'echo %DOCKERHUB_TOKEN%| docker login -u %DOCKERHUB_USER% --password-stdin'
+
+            try {
+                bat 'docker push %DOCKERHUB_USER%/cicd-springboot-app:%BUILD_NUMBER%'
+                bat 'docker push %DOCKERHUB_USER%/cicd-springboot-app:latest'
+            } finally {
+                bat 'docker logout'
             }
         }
+    }
+}
+
 
 
 stage('Docker Deploy') {
