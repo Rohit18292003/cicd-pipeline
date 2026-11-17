@@ -44,59 +44,56 @@ pipeline {
             }
         }
 
-
-
-stage('Docker Build') {
-    steps {
-        bat '''
-            docker build ^
-            -t rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER% ^
-            -t rohitbirajdardocker/cicd-springboot-app:latest .
-        '''
-    }
-}
-
-stage('Docker Push') {
-    steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKERHUB_USER',
-                passwordVariable: 'DOCKERHUB_TOKEN'
-            )
-        ]) {
-            bat 'echo %DOCKERHUB_TOKEN%| docker login -u %DOCKERHUB_USER% --password-stdin'
-
-            try {
-                bat 'docker push %DOCKERHUB_USER%/cicd-springboot-app:%BUILD_NUMBER%'
-                bat 'docker push %DOCKERHUB_USER%/cicd-springboot-app:latest'
-            } finally {
-                bat 'docker logout'
+        stage('Docker Build') {
+            steps {
+                bat '''
+                    docker build ^
+                    -t rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER% ^
+                    -t rohitbirajdardocker/cicd-springboot-app:latest .
+                '''
             }
         }
-    }
-}
 
+        stage('Docker Push') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    bat 'echo %DOCKERHUB_TOKEN%| docker login -u %DOCKERHUB_USER% --password-stdin'
 
-
-stage('Docker Deploy') {
-    steps {
-        script {
-            bat(
-                returnStatus: true,
-                script: 'docker rm -f cicd-app'
-            )
-
-            bat '''
-                docker run -d --restart unless-stopped ^
-                -p 8081:8080 ^
-                --name cicd-app ^
-                rohitbirajdardocker/cicd-springboot-app:latest
-            '''
+                    try {
+                        bat 'docker push rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER%'
+                        bat 'docker push rohitbirajdardocker/cicd-springboot-app:latest'
+                    } finally {
+                        bat 'docker logout'
+                    }
+                }
+            }
         }
-    }
-}
 
+        stage('Docker Deploy') {
+            steps {
+                script {
+                    bat(
+                        returnStatus: true,
+                        script: 'docker rm -f cicd-app'
+                    )
+
+                    bat '''
+                        docker pull rohitbirajdardocker/cicd-springboot-app:latest
+
+                        docker run -d --restart unless-stopped ^
+                        -p 8081:8080 ^
+                        --name cicd-app ^
+                        rohitbirajdardocker/cicd-springboot-app:latest
+                    '''
+                }
+            }
+        }
     }
 
     post {
