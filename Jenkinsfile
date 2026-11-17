@@ -54,26 +54,28 @@ pipeline {
             }
         }
 
-        stage('Docker Push') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_TOKEN'
-                    )
-                ]) {
-                    bat 'echo %DOCKERHUB_TOKEN%| docker login -u %DOCKERHUB_USER% --password-stdin'
 
-                    try {
-                        bat 'docker push rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER%'
-                        bat 'docker push rohitbirajdardocker/cicd-springboot-app:latest'
-                    } finally {
-                        bat 'docker logout'
-                    }
-                }
-            }
+
+stage('Docker Push') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_TOKEN'
+            )
+        ]) {
+            bat '''
+                echo %DOCKERHUB_TOKEN%| docker login -u %DOCKERHUB_USER% --password-stdin
+                docker push rohitbirajdardocker/cicd-springboot-app:%BUILD_NUMBER%
+                docker push rohitbirajdardocker/cicd-springboot-app:latest
+                docker logout
+            '''
         }
+    }
+}
+
+
 
         stage('Docker Deploy') {
             steps {
